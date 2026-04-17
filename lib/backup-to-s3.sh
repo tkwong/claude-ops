@@ -15,6 +15,7 @@
 # Set a 30-day lifecycle rule on the bucket to auto-expire old backups.
 
 set -euo pipefail
+shopt -s nullglob   # non-matching globs expand to empty
 
 BACKUP_CONF="${BACKUP_CONF:?set BACKUP_CONF=/path/to/conf}"
 [ -f "$BACKUP_CONF" ] || { echo "missing conf: $BACKUP_CONF" >&2; exit 1; }
@@ -23,7 +24,8 @@ source "$BACKUP_CONF"
 
 : "${BUCKET:?config missing BUCKET}"
 : "${SOURCE_DIR:?config missing SOURCE_DIR}"
-[ "${#PATTERNS[@]}" -gt 0 ] || { echo "config missing PATTERNS array" >&2; exit 1; }
+declare -p PATTERNS >/dev/null 2>&1 || { echo "config missing PATTERNS array" >&2; exit 1; }
+[ "${#PATTERNS[@]}" -gt 0 ] || { echo "config PATTERNS array is empty" >&2; exit 1; }
 
 PREFIX="${PREFIX:-$(basename "$SOURCE_DIR")}"
 LOG="${LOG:-/tmp/backup.log}"
@@ -47,7 +49,11 @@ if [ ${#FILES[@]} -eq 0 ]; then
     exit 0
 fi
 
-tar czf "$TARBALL" "${FILES[@]}" 2>/dev/null
+if ! tar czf "$TARBALL" "${FILES[@]}" 2>>"$LOG"; then
+    echo "[$(ts)] [$PREFIX] tar FAILED — see $LOG" >> "$LOG"
+    rm -f "$TARBALL"
+    exit 1
+fi
 SIZE=$(du -h "$TARBALL" | cut -f1)
 
 if aws s3 cp "$TARBALL" "$BUCKET/$S3_KEY" --only-show-errors; then

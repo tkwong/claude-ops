@@ -42,6 +42,11 @@ prefixed with `-`. E.g. `/home/me/myproject` → `-home-me-myproject`.
 
 ## File format
 
+> Claude Code itself doesn't parse the frontmatter below — it just reads
+> the markdown. The frontmatter is a *convention* this repo recommends so
+> the agent can reason about which memories are relevant to a task. Drop it
+> if you prefer plain markdown; everything still works.
+
 ```markdown
 ---
 name: Short title

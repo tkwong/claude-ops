@@ -18,8 +18,12 @@ mkdir -p "$MEMDIR"
 
 if [ ! -f "$MEMDIR/MEMORY.md" ]; then
     cat > "$MEMDIR/MEMORY.md" <<'EOF'
+<!-- claude-ops memory index. Loaded into every Claude Code session.
+     One line per memory file, format:
+     - [Title](filename.md) — one-line hook
+     Keep this file under ~150 lines; lines past 200 may be truncated. -->
 EOF
-    echo "Initialized empty MEMORY.md at $MEMDIR/MEMORY.md"
+    echo "Initialized MEMORY.md at $MEMDIR/MEMORY.md"
 else
     echo "MEMORY.md already exists at $MEMDIR/MEMORY.md"
 fi

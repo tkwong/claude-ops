@@ -4,9 +4,10 @@
 #
 # Installs:
 #   - bin/agops          → $PREFIX/bin/agops (symlink)
-#   - lib/*              → kept in repo, referenced absolute
-#   - $CLAUDE_OPS_HOME   → ~/.claude-ops/ (agents/, examples/)
+#   - lib/*              → kept in repo, referenced by absolute path
+#   - $CLAUDE_OPS_HOME   → ~/.claude-ops/agents/  (empty, user populates)
 #   - cron               → suggests crontab entry, doesn't install
+# Note: examples/ stays in the repo (not copied) — they're reference, not config.
 #
 # Idempotent — safe to re-run.
 

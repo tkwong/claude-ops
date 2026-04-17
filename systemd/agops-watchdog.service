@@ -4,7 +4,10 @@ After=network.target
 
 [Service]
 Type=oneshot
-# Adjust paths for your install:
-ExecStart=/home/ec2-user/claude-ops/lib/watchdog.sh
+# Resolves to /home/<user>/claude-ops — adjust the path tail if your repo
+# lives elsewhere. The User= line MUST match (systemd needs an explicit user
+# for system-level units; for user units, install under ~/.config/systemd/user/
+# and drop both User= and the %h is redundant).
 User=ec2-user
-Environment=CLAUDE_OPS_HOME=/home/ec2-user/.claude-ops
+ExecStart=%h/claude-ops/lib/watchdog.sh
+Environment=CLAUDE_OPS_HOME=%h/.claude-ops

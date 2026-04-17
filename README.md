@@ -43,6 +43,17 @@ claude-ops/
 - You're building autonomous coding agents → use Claude Code or Aider directly,
   no supervisor needed.
 
+## Prerequisites
+
+- Linux (or macOS — caveat: a couple of scripts use `readlink -f`, install
+  `coreutils` via Homebrew if needed)
+- `tmux` (`apt install tmux` / `brew install tmux`)
+- [Claude Code](https://www.anthropic.com/claude-code) installed and `claude`
+  on `$PATH` — this repo doesn't ship Claude itself
+- (Optional) `aws` CLI for S3 backup
+- (Optional) A Telegram MCP bridge if you want phone access — see
+  [`docs/TELEGRAM-MCP.md`](docs/TELEGRAM-MCP.md)
+
 ## Quickstart (5 minutes)
 
 ```bash
@@ -74,13 +85,9 @@ agops attach myagent          # interact via tmux (Ctrl-b d to detach)
 
 ## Telegram bridge (recommended)
 
-`claude-ops` doesn't ship a Telegram client — instead it works with any MCP
-server that exposes a chat surface. The setup the author uses:
-
-- [`claude-telegram-supercharged`](https://github.com/...) — Telegram MCP server
-  with multi-chat routing, voice transcription, and message scheduling.
-
-See [`docs/TELEGRAM-MCP.md`](docs/TELEGRAM-MCP.md) for setup.
+`claude-ops` doesn't ship a Telegram client. It works with any MCP server that
+exposes chat tools to Claude Code. See [`docs/TELEGRAM-MCP.md`](docs/TELEGRAM-MCP.md)
+for setup options.
 
 ## S3 backup
 
@@ -104,8 +111,8 @@ This repo answers that with the smallest amount of code that works.
 
 ## Status
 
-Used in production by [polyhft](https://github.com/tkwong/polyhft) — an
-8-bot HFT operation on Polymarket. Battle-tested for ~24/7 uptime over weeks.
+Early — runs 24/7 on the author's box supervising a multi-bot trading
+operation. Public release; expect rough edges. Issues and PRs welcome.
 
 ## License
 

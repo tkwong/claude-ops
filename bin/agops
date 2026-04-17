@@ -49,6 +49,7 @@ list_agents() {
 
 load_conf() {
     local name="$1"
+    [[ "$name" =~ ^[A-Za-z0-9_-]+$ ]] || die "invalid name '$name' (use [A-Za-z0-9_-]+)"
     local conf="$AGENTS_DIR/$name.conf"
     [ -f "$conf" ] || die "no config for '$name' at $conf"
     # shellcheck source=/dev/null
@@ -85,7 +86,7 @@ case "$cmd" in
     list|status)   list_agents ;;
     start)         start_agent "${1:?name required}" ;;
     stop)          stop_agent "${1:?name required}" ;;
-    restart)       stop_agent "${1:?name required}" || true; sleep 1; start_agent "$1" ;;
+    restart)       stop_agent "${1:?name required}"; start_agent "$1" ;;
     logs)
         name="${1:?name required}"; shift || true
         load_conf "$name"
@@ -97,14 +98,15 @@ case "$cmd" in
         ;;
     attach)        tmux attach -t "${1:?name required}" ;;
     doctor)
-        for bin in tmux aws jq; do
+        for bin in tmux claude aws; do
             if command -v $bin >/dev/null 2>&1; then
-                echo "OK   $bin"
+                echo "OK   $bin    ($(command -v $bin))"
             else
-                echo "MISS $bin"
+                echo "MISS $bin    (tmux=required, claude=required, aws=optional for backup)"
             fi
         done
         echo "CLAUDE_OPS_HOME=$CLAUDE_OPS_HOME"
+        echo "AGENTS_DIR=$AGENTS_DIR ($(ls "$AGENTS_DIR"/*.conf 2>/dev/null | wc -l) configs)"
         ;;
     *) die "unknown command: $cmd (try: list, start, stop, restart, logs, attach, doctor)" ;;
 esac

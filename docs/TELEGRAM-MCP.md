@@ -3,30 +3,31 @@
 `claude-ops` doesn't ship a Telegram client. Use any MCP server that exposes
 chat tools to Claude Code. The setup the author runs:
 
-## Option A: claude-telegram-supercharged
+## Option A: an existing Telegram MCP server
 
-[github.com/.../claude-telegram-supercharged](https://github.com/) — a TypeScript
-MCP server that:
-- Routes Telegram chats to Claude Code sessions
-- Auto-transcribes voice messages (whisper.cpp)
-- Schedules reminders / cron jobs from chat
-- Multi-chat / multi-thread routing
+There are several open-source Telegram MCP servers. Pick one that supports:
+- Routing inbound messages from Telegram into Claude Code (as MCP notifications)
+- A `reply` tool so Claude can send messages back
+- (Recommended) Voice transcription via `whisper.cpp` or `whisper`
+- (Recommended) Per-chat / per-thread scoping if you'll route multiple users
 
-Setup:
+Search GitHub for `claude telegram mcp` — the ecosystem is moving fast and a
+specific recommendation here will rot. Setup is roughly:
+
 ```bash
-git clone https://github.com/.../claude-telegram-supercharged.git
-cd claude-telegram-supercharged
-bun install
+git clone <chosen telegram-mcp repo>
+cd <repo>
+# install deps per their README
 cp .env.example .env
 $EDITOR .env   # set TELEGRAM_BOT_TOKEN, ALLOWED_USER_IDS
 ```
 
-Run it as a claude-ops agent itself:
+Run the MCP server itself as a claude-ops agent (so the watchdog restarts it):
 
 ```bash
 # ~/.claude-ops/agents/telegram.conf
-PROJECT_DIR="$HOME/claude-telegram-supercharged"
-COMMAND="bun run server.ts"
+PROJECT_DIR="$HOME/<your-telegram-mcp-repo>"
+COMMAND="bun run server.ts"   # or: node ./server.js, python -m ..., etc.
 LOG_FILE="/tmp/telegram-mcp.log"
 ```
 

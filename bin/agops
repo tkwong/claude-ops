@@ -1,0 +1,110 @@
+#!/bin/bash
+# claude-ops — supervise long-running Claude Code (or any) agents in tmux.
+#
+# Usage:
+#   agops list                          List all configured agents and status
+#   agops start <name>                  Start agent (no-op if running)
+#   agops stop <name>                   Stop agent (kills tmux session)
+#   agops restart <name>                Stop + start
+#   agops logs <name> [-f]              Show log; -f to follow
+#   agops attach <name>                 Attach to tmux session (Ctrl-b d to detach)
+#   agops status                        Same as list
+#   agops doctor                        Check deps (tmux, claude, etc.)
+#
+# Config:
+#   $CLAUDE_OPS_HOME (default: ~/.claude-ops)
+#     agents/<name>.conf    Per-agent config (sourced as bash):
+#                              PROJECT_DIR=/path/to/project
+#                              COMMAND="claude"   # or "bun run server.ts"
+#                              LOG_FILE=/tmp/<name>.log  # optional, default /tmp/<name>.log
+
+set -euo pipefail
+
+CLAUDE_OPS_HOME="${CLAUDE_OPS_HOME:-$HOME/.claude-ops}"
+AGENTS_DIR="$CLAUDE_OPS_HOME/agents"
+
+mkdir -p "$AGENTS_DIR"
+
+die() { echo "agops: $*" >&2; exit 1; }
+
+list_agents() {
+    if [ -z "$(ls -A "$AGENTS_DIR" 2>/dev/null)" ]; then
+        echo "No agents configured. Drop a *.conf in $AGENTS_DIR (see examples/)."
+        return
+    fi
+    printf "%-24s %-10s %s\n" "NAME" "STATUS" "PROJECT"
+    for conf in "$AGENTS_DIR"/*.conf; do
+        [ -f "$conf" ] || continue
+        local name; name=$(basename "$conf" .conf)
+        ( source "$conf"
+          if tmux has-session -t "$name" 2>/dev/null; then
+              status="RUNNING"
+          else
+              status="DOWN"
+          fi
+          printf "%-24s %-10s %s\n" "$name" "$status" "${PROJECT_DIR:-?}"
+        )
+    done
+}
+
+load_conf() {
+    local name="$1"
+    local conf="$AGENTS_DIR/$name.conf"
+    [ -f "$conf" ] || die "no config for '$name' at $conf"
+    # shellcheck source=/dev/null
+    source "$conf"
+    : "${PROJECT_DIR:?config missing PROJECT_DIR}"
+    : "${COMMAND:?config missing COMMAND}"
+    LOG_FILE="${LOG_FILE:-/tmp/$name.log}"
+}
+
+start_agent() {
+    local name="$1"
+    load_conf "$name"
+    if tmux has-session -t "$name" 2>/dev/null; then
+        echo "$name: already running"
+        return
+    fi
+    [ -d "$PROJECT_DIR" ] || die "PROJECT_DIR does not exist: $PROJECT_DIR"
+    tmux new-session -d -s "$name" "cd '$PROJECT_DIR' && $COMMAND 2>&1 | tee '$LOG_FILE'"
+    echo "$name: started (log: $LOG_FILE)"
+}
+
+stop_agent() {
+    local name="$1"
+    if tmux has-session -t "$name" 2>/dev/null; then
+        tmux kill-session -t "$name"
+        echo "$name: stopped"
+    else
+        echo "$name: not running"
+    fi
+}
+
+cmd="${1:-list}"; shift || true
+case "$cmd" in
+    list|status)   list_agents ;;
+    start)         start_agent "${1:?name required}" ;;
+    stop)          stop_agent "${1:?name required}" ;;
+    restart)       stop_agent "${1:?name required}" || true; sleep 1; start_agent "$1" ;;
+    logs)
+        name="${1:?name required}"; shift || true
+        load_conf "$name"
+        if [ "${1:-}" = "-f" ]; then
+            tail -f "$LOG_FILE"
+        else
+            tail -50 "$LOG_FILE"
+        fi
+        ;;
+    attach)        tmux attach -t "${1:?name required}" ;;
+    doctor)
+        for bin in tmux aws jq; do
+            if command -v $bin >/dev/null 2>&1; then
+                echo "OK   $bin"
+            else
+                echo "MISS $bin"
+            fi
+        done
+        echo "CLAUDE_OPS_HOME=$CLAUDE_OPS_HOME"
+        ;;
+    *) die "unknown command: $cmd (try: list, start, stop, restart, logs, attach, doctor)" ;;
+esac

@@ -1,0 +1,10 @@
+[Unit]
+Description=claude-ops watchdog (restart DOWN agents)
+After=network.target
+
+[Service]
+Type=oneshot
+# Adjust paths for your install:
+ExecStart=/home/ec2-user/claude-ops/lib/watchdog.sh
+User=ec2-user
+Environment=CLAUDE_OPS_HOME=/home/ec2-user/.claude-ops

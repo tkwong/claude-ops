@@ -1,0 +1,61 @@
+#!/bin/bash
+# claude-ops installer.
+# Usage: ./install.sh [--prefix /usr/local]
+#
+# Installs:
+#   - bin/agops          → $PREFIX/bin/agops (symlink)
+#   - lib/*              → kept in repo, referenced absolute
+#   - $CLAUDE_OPS_HOME   → ~/.claude-ops/ (agents/, examples/)
+#   - cron               → suggests crontab entry, doesn't install
+#
+# Idempotent — safe to re-run.
+
+set -euo pipefail
+
+PREFIX="${PREFIX:-$HOME/.local}"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+CLAUDE_OPS_HOME="${CLAUDE_OPS_HOME:-$HOME/.claude-ops}"
+
+echo "==> repo: $REPO_DIR"
+echo "==> prefix: $PREFIX"
+echo "==> claude-ops home: $CLAUDE_OPS_HOME"
+
+# 1. dirs
+mkdir -p "$PREFIX/bin" "$CLAUDE_OPS_HOME/agents"
+chmod +x "$REPO_DIR/bin/"* "$REPO_DIR/lib/"*.sh
+
+# 2. symlink agops
+ln -sf "$REPO_DIR/bin/agops" "$PREFIX/bin/agops"
+echo "==> linked $PREFIX/bin/agops"
+
+# 3. dep check
+echo ""
+echo "==> dep check:"
+for bin in tmux aws; do
+    if command -v "$bin" >/dev/null 2>&1; then
+        echo "    OK   $bin"
+    else
+        echo "    MISS $bin (some features need it — see docs/)"
+    fi
+done
+
+# 4. PATH advice
+case ":$PATH:" in
+    *":$PREFIX/bin:"*) ;;
+    *) echo ""
+       echo "==> $PREFIX/bin not in PATH. Add to your shell:"
+       echo "    export PATH=\"\$PATH:$PREFIX/bin\"" ;;
+esac
+
+cat <<EOF
+
+==> Next steps:
+    1. Create an agent config:
+         cp $REPO_DIR/examples/trading-bot/agent.conf $CLAUDE_OPS_HOME/agents/myagent.conf
+         \$EDITOR $CLAUDE_OPS_HOME/agents/myagent.conf
+    2. Start it:
+         agops start myagent
+    3. (Recommended) Install the watchdog cron:
+         (crontab -l 2>/dev/null; echo "*/2 * * * * $REPO_DIR/lib/watchdog.sh") | crontab -
+    4. (Optional) Set up S3 backup — see docs/BACKUP.md
+EOF

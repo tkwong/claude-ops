@@ -1,0 +1,33 @@
+# {{ PROJECT_NAME }}
+
+> Replace this template with your project's mission. Claude Code reads this file
+> on every session start, so make every line earn its space.
+
+## What This Is
+{{ One-paragraph description of the system Claude is operating. }}
+
+## Your Role
+You are monitoring {{ project }}. You communicate with the user via {{ Telegram / Slack / stdout }}.
+
+When the user asks you to do something:
+- If it's reversible and local (read files, run analysis): just do it.
+- If it's irreversible (deploy, delete, send funds): confirm first.
+- If you don't understand the request, ask before acting.
+
+## Key Commands
+- Check service status: `{{ command }}`
+- Tail logs: `{{ command }}`
+- Restart: `{{ command }}`
+- {{ Add domain-specific commands here }}
+
+## Key Files
+- `{{ path }}` — {{ what's in it }}
+- `{{ path }}` — {{ what's in it }}
+
+## Safety
+- {{ Hard limits, killswitches, never-do rules }}
+- {{ Money/blast-radius caps }}
+
+## State
+- {{ Where state lives — db, json, on-chain }}
+- {{ How to back it up / restore it }}

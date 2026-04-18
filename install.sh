@@ -48,6 +48,27 @@ case ":$PATH:" in
        echo "    export PATH=\"\$PATH:$PREFIX/bin\"" ;;
 esac
 
+# 5. Optional: link skills into ~/.claude/skills/ so /skill-name works in Claude Code
+# Default to YES for non-interactive installs; honor SKIP_SKILLS=1 to opt out.
+echo ""
+do_skills="y"
+if [ -t 0 ] && [ "${SKIP_SKILLS:-}" != "1" ]; then
+    read -rp "Link claude-ops skills into ~/.claude/skills/ ? [Y/n] " yn || yn=""
+    case "${yn:-Y}" in [Nn]*) do_skills="n" ;; esac
+elif [ "${SKIP_SKILLS:-}" = "1" ]; then
+    do_skills="n"
+fi
+if [ "$do_skills" = "y" ]; then
+    mkdir -p "$HOME/.claude/skills"
+    for skill in "$REPO_DIR/skills/"*.md; do
+        [ -f "$skill" ] || continue
+        ln -sf "$skill" "$HOME/.claude/skills/$(basename "$skill")"
+    done
+    echo "==> linked $(ls -1 "$HOME/.claude/skills/" 2>/dev/null | wc -l) skills"
+else
+    echo "==> skipped skills linking (set SKIP_SKILLS=0 or run interactively to enable)"
+fi
+
 cat <<EOF
 
 ==> Next steps:
@@ -59,4 +80,6 @@ cat <<EOF
     3. (Recommended) Install the watchdog cron:
          (crontab -l 2>/dev/null; echo "*/2 * * * * $REPO_DIR/lib/watchdog.sh") | crontab -
     4. (Optional) Set up S3 backup — see docs/BACKUP.md
+    5. (Optional) Set up daily-review cadence — see docs/SKILLS.md
+       e.g. cron a 09:00 "/daily-review for last 24h" message via your Telegram MCP
 EOF

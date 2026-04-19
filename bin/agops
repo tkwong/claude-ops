@@ -17,6 +17,8 @@
 #                              PROJECT_DIR=/path/to/project
 #                              COMMAND="claude"   # or "bun run server.ts"
 #                              LOG_FILE=/tmp/<name>.log  # optional, default /tmp/<name>.log
+#                              PRE_START="rm -f .lock"   # optional, runs in PROJECT_DIR
+#                                                         # before COMMAND; abort on nonzero exit
 
 set -euo pipefail
 
@@ -67,6 +69,10 @@ start_agent() {
         return
     fi
     [ -d "$PROJECT_DIR" ] || die "PROJECT_DIR does not exist: $PROJECT_DIR"
+    if [ -n "${PRE_START:-}" ]; then
+        ( cd "$PROJECT_DIR" && eval "$PRE_START" ) \
+            || die "$name: PRE_START failed — aborting start"
+    fi
     tmux new-session -d -s "$name" "cd '$PROJECT_DIR' && $COMMAND 2>&1 | tee '$LOG_FILE'"
     echo "$name: started (log: $LOG_FILE)"
 }
